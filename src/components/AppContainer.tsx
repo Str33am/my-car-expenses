@@ -6,7 +6,7 @@ import useStyles from '../styles/styles';
 import SignUp from './SignUp';
 import { IRootState } from '../types';
 import { useDispatch, useSelector } from 'react-redux';
-import { clearAll } from '../store/actions/actions';
+import { clearAll, updateUserStore } from '../store/actions/actions';
 import Footer from './Footer';
 import { Auth } from 'aws-amplify';
 
@@ -30,6 +30,22 @@ const AppContainer: React.FC<{}> = (props) => {
     const handleChange = (event: React.ChangeEvent<{}>, newValue: number) => {
         setNavValue(newValue);
     };
+
+    useEffect(() => {
+        try {
+            
+            Auth.currentAuthenticatedUser().then((resp: {username: string}) => {
+                const username = resp.username
+                dispatch(updateUserStore({...user, username}));
+            });
+            
+
+        } catch (error) {
+            console.warn(error);
+            
+        }
+    //eslint-disable-next-line
+    }, [])
 
     useEffect(() => {
         if (navValue === 0) {

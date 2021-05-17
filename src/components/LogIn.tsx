@@ -111,10 +111,7 @@ const LogIn:React.FC<LogInProps> = props => {
   const login = async () => {
 
     try {
-      await Auth.signIn({
-        username: username,
-        password: values.password,
-      });
+      await Auth.signIn( username, values.password);
       
       setOpenSuccessSnackbar(true);
       dispatch(updateUserStore({...user, username}));
