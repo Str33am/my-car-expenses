@@ -180,7 +180,7 @@ const LogIn:React.FC<LogInProps> = props => {
             labelWidth={70}
           />
         </FormControl>
-        <Link href={"https://www.google.com"} style={{"marginLeft": 10}}>Reset your password here.</Link>
+        <Link href={"/"} style={{"marginLeft": 10}}>Reset your password here.</Link>
         {cognitoError !== '' ? <span className={globalClasses.errorText}>{cognitoError}</span> : null}
         </DialogContent>
         <DialogActions>
