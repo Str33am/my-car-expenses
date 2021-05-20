@@ -134,6 +134,11 @@ const LogIn:React.FC<LogInProps> = props => {
     setUsername(event.target.value);
   };
 
+  const handleOnClose = () => {
+    setOpen(false);
+    setCognitoError('');
+  }
+
 
   const handleMouseDownPassword = (event: React.MouseEvent<HTMLButtonElement>) => {
     event.preventDefault();
@@ -141,8 +146,8 @@ const LogIn:React.FC<LogInProps> = props => {
 
   return (
     <div>
-      <Dialog onClose={() => setOpen(false)} aria-labelledby="customized-dialog-title" open={open} fullWidth>
-        <DialogTitle id="customized-dialog-title" onClose={() => setOpen(false)}>
+      <Dialog onClose={handleOnClose} aria-labelledby="customized-dialog-title" open={open} fullWidth>
+        <DialogTitle id="customized-dialog-title" onClose={handleOnClose}>
           Log In
         </DialogTitle>
         <DialogContent dividers>
@@ -180,7 +185,7 @@ const LogIn:React.FC<LogInProps> = props => {
             labelWidth={70}
           />
         </FormControl>
-        <Link href={"/"} style={{"marginLeft": 10}}>Reset your password here.</Link>
+        {/* <Link href={"/"} style={{"marginLeft": 10}}>Reset your password here.</Link> */}
         {cognitoError !== '' ? <span className={globalClasses.errorText}>{cognitoError}</span> : null}
         </DialogContent>
         <DialogActions>
