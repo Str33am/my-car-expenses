@@ -3,5 +3,8 @@
         "REGION": "eu-west-1",
         "USER_POOL_ID": "eu-west-1_jFJmDhnxk",
         "APP_CLIENT_ID": "2o6l3o5m09sa368tu9efj3psii"
+    },
+    "api": {
+        "invokeURL": "https://65skgzpp0e.execute-api.eu-west-1.amazonaws.com/prod/my-car-expenses"
     }
 }

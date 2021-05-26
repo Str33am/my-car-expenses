@@ -1,23 +1,20 @@
 import React, { useState } from 'react';
 import { createStyles, makeStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
+import axios from 'axios';
 import clsx from 'clsx';
-import Button from '@material-ui/core/Button';
-import Dialog from '@material-ui/core/Dialog';
 import MuiDialogTitle from '@material-ui/core/DialogTitle';
 import MuiDialogContent from '@material-ui/core/DialogContent';
 import MuiDialogActions from '@material-ui/core/DialogActions';
 import IconButton from '@material-ui/core/IconButton';
 import CloseIcon from '@material-ui/icons/Close';
 import Typography from '@material-ui/core/Typography';
-import { FormControl, InputAdornment, InputLabel, Link, OutlinedInput, Snackbar } from '@material-ui/core';
+import { FormControl, InputAdornment, InputLabel, OutlinedInput, Button, Dialog } from '@material-ui/core';
 import { Visibility, VisibilityOff } from '@material-ui/icons';
 import { updateUserStore } from '../store/actions/actions';
 import { useDispatch } from 'react-redux';
-import { User } from '../types';
-import { v4 as uuidv4 } from 'uuid';
 import { Auth } from 'aws-amplify';
-import { Alert } from './shared/helpers';
-import useStyles from '../styles/styles';
+import { snackbar } from './shared/helpers';
+import config from '../config.json';
 
 const styles = (theme: Theme) =>
   createStyles({
@@ -91,33 +88,55 @@ interface State {
 interface LogInProps {
     open: boolean;
     setOpen: React.Dispatch<React.SetStateAction<boolean>>;
-    user?: User;
 }
 
 const LogIn:React.FC<LogInProps> = props => {
-  const {open, setOpen, user} = props;
+  const {open, setOpen} = props;
   const classes = useLocalStyles();
   const dispatch = useDispatch();
   const [openSuccessSnackbar, setOpenSuccessSnackbar] = useState<boolean>(false);
-  const [cognitoError, setCognitoError] = useState<string>('');
-  const globalClasses = useStyles();
+  const [openErrorSnackbar, setOpenErrorSnackbar] = useState<boolean>(false);
 
+  const [errorMessage, setErrorMessage ] = useState<string>('');
   const [username, setUsername ] = useState<string>('');
   const [values, setValues] = useState<State>({
     password: '',
     showPassword: false,
   });
 
+  const fetchUser = async () => {
+    const userInfo = await Auth.currentUserInfo();
+    const {username} = userInfo
+    const {email} = userInfo.attributes;
+    
+    await axios.get(config.api.invokeURL + `/user/${email}`)
+    .then(responseUser => {
+      if (responseUser?.data) {
+        dispatch(updateUserStore(responseUser.data));
+      }
+    })
+    .catch(err => {
+      console.warn(err)
+      dispatch(updateUserStore({email, username}));
+      axios.put(config.api.invokeURL + `/user`, { email: email, username: username})
+          .catch(err => {
+              setErrorMessage(err)
+              setOpenErrorSnackbar(true);
+          })
+    })
+    
+}
+
   const login = async () => {
 
     try {
       await Auth.signIn( username, values.password);
       
+      fetchUser();
       setOpenSuccessSnackbar(true);
-      dispatch(updateUserStore({...user, username}));
       setOpen(false);
     } catch (error) {
-      setCognitoError(!error.message ? error : error.message);
+      setErrorMessage(!error.message ? error : error.message);
     }
 
   };
@@ -136,7 +155,7 @@ const LogIn:React.FC<LogInProps> = props => {
 
   const handleOnClose = () => {
     setOpen(false);
-    setCognitoError('');
+    setErrorMessage('');
   }
 
 
@@ -186,7 +205,6 @@ const LogIn:React.FC<LogInProps> = props => {
           />
         </FormControl>
         {/* <Link href={"/"} style={{"marginLeft": 10}}>Reset your password here.</Link> */}
-        {cognitoError !== '' ? <span className={globalClasses.errorText}>{cognitoError}</span> : null}
         </DialogContent>
         <DialogActions>
           <Button autoFocus onClick={() => login()} color="primary">
@@ -194,17 +212,8 @@ const LogIn:React.FC<LogInProps> = props => {
           </Button>
         </DialogActions>
       </Dialog>
-      <Snackbar
-        autoHideDuration={2500}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
-        open={openSuccessSnackbar}
-        onClose={() => setOpenSuccessSnackbar(false)}
-        key={uuidv4()}
-        >
-        <Alert onClose={() => setOpenSuccessSnackbar(false)} severity="success">
-            {`Welcome ${username}`}
-        </Alert>
-        </Snackbar>
+      {snackbar(2500, setOpenSuccessSnackbar, openSuccessSnackbar, `Welcome ${username}`, 'success')}
+      {snackbar(5000, setOpenErrorSnackbar, openErrorSnackbar, `ERROR: ${errorMessage}`, 'error')}
     </div>
   );
 };

@@ -1,6 +1,6 @@
 import { action } from 'typesafe-actions'; 
 import { ActionType } from "typesafe-actions";
-import { CarData, IFilters } from '../../types';
+import { CarData, IFilters, User } from '../../types';
 
 export const UPDATE_USER = "UPDATE_USER";
 export const UPDATE_MY_CAR = "UPDATE_MY_CAR";

@@ -109,7 +109,7 @@ const AppContainer: React.FC<{}> = (props) => {
                 }
             </Grid>
             <Footer />
-            <LogIn open={openLoginDialog} user={user} setOpen={setOpenLoginDialog} />
+            <LogIn open={openLoginDialog} setOpen={setOpenLoginDialog} />
             <SignUp open={openSignUpDialog} user={user} setOpen={setOpenSignUpDialog} setOpenLoginDialog={setOpenLoginDialog}/>
         </div >
     );

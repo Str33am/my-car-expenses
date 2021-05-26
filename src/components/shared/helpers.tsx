@@ -1,6 +1,7 @@
 import { CarData, OptionType } from "../../types";
 import { v4 as uuidv4 } from 'uuid';
-import MuiAlert, { AlertProps } from '@material-ui/lab/Alert';
+import MuiAlert, { AlertProps, Color } from '@material-ui/lab/Alert';
+import { Snackbar } from '@material-ui/core';
 
 export const getYearOptions = (): OptionType[] => {
     const yearsList: number[] = [];
@@ -46,7 +47,7 @@ export const generateMockExpenses = (car: CarData): CarData => {
         }
 
         const carCopy = { ...car };
-        for (let index = 0; index < 12; index++) {
+        for (let index = 0; index < 6; index++) {
             carCopy.expenses.serviceExpenses.push(randomExpense());
             carCopy.expenses.maintenanceExpenses.push(randomExpense());
             carCopy.expenses.roadTaxExpenses.push(randomExpense());
@@ -57,4 +58,20 @@ export const generateMockExpenses = (car: CarData): CarData => {
 
 export function Alert(props: AlertProps) {
     return <MuiAlert elevation={6} variant="filled" {...props} />;
+}
+
+export const snackbar = (duration: number, setOpenSnackbar: (t: boolean) => void, openSnackbar: boolean, message: string, type: Color)  => {
+return (
+    <Snackbar
+        autoHideDuration={duration}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+        open={openSnackbar}
+        onClose={() => setOpenSnackbar(false)}
+        key={uuidv4()}
+    >
+      <Alert onClose={() => setOpenSnackbar(false)} severity={type}>
+        {message}
+      </Alert>
+    </Snackbar>
+)
 }

@@ -1,4 +1,4 @@
-import { Accordion, AccordionDetails, AccordionSummary, Button, Checkbox, createStyles, FormControl, FormControlLabel, FormGroup, Grid, InputAdornment, InputLabel, makeStyles, OutlinedInput, Snackbar, Typography } from '@material-ui/core';
+import { Accordion, AccordionDetails, AccordionSummary, Button, Checkbox, createStyles, FormControl, FormControlLabel, FormGroup, Grid, InputAdornment, InputLabel, makeStyles, OutlinedInput, Typography } from '@material-ui/core';
 import React, { useState } from 'react';
 import ExpandMoreIcon from '@material-ui/icons/ExpandMore';
 import MainContainer from '../shared/MainContainer';
@@ -10,9 +10,10 @@ import clsx from 'clsx';
 import _ from 'lodash';
 import Select from 'react-select';
 import { v4 as uuidv4 } from 'uuid';
+import axios from 'axios';
 import { Bar, BarChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
-import { Alert, generateMockExpenses } from '../shared/helpers';
-
+import { snackbar } from '../shared/helpers';
+import config from '../../config.json';
 import carsData from '../../cars.json';
 
 const MyCar: React.FC<{}> = () => {
@@ -23,7 +24,13 @@ const MyCar: React.FC<{}> = () => {
     const selectMyCar = (state: IRootState) => state.app.appState.myCar;
     const myCar = useSelector(selectMyCar);
 
+    const selectUser = (state: IRootState) => state.app.appState.user;
+    const user = useSelector(selectUser);
+
     const [openSuccessSnackbar, setOpenSuccessSnackbar] = useState<boolean>(false);
+    const [openErrorSnackbar, setOpenErrorSnackbar] = useState<boolean>(false);
+    const [errorMessage, setErrorMessage ] = useState<string>('');
+
     const [make, setMake] = useState<string>('');
     const [model, setModel] = useState<string>('');
     const [carYear, setCarYear] = useState<number>(0);
@@ -57,7 +64,7 @@ const MyCar: React.FC<{}> = () => {
         { value: FUELTYPE.ELECTRIC, label: FUELTYPE.ELECTRIC },
         { value: FUELTYPE.HYBRID, label: FUELTYPE.HYBRID }];
 
-    const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const handleChangeFilters = (event: React.ChangeEvent<HTMLInputElement>) => {
         dispatch(updateMyFilters({ ...filters, [event.target.name]: event.target.checked }));
     };
 
@@ -104,8 +111,8 @@ const MyCar: React.FC<{}> = () => {
 
     const isValid = myMake !== "" && myModel !== "" && myYear !== 0 && myFuelType !== undefined
 
-    const handleSave = () => {
-        if (isValid) {
+    const handleSave = async () => {
+        if (isValid && user?.email) {
             let mc: CarData;
             if (!myCar?.car) {
 
@@ -141,9 +148,17 @@ const MyCar: React.FC<{}> = () => {
                 mc.yearTolerance = yearTolerance ?? 0;
                 mc.milesTolerance = milesTolerance ?? 0;
             }
-            const carWithMockExpenses = generateMockExpenses(mc);
-            dispatch(updateMyCar(carWithMockExpenses));
-            setOpenSuccessSnackbar(true);
+            
+            const resp = axios.put(config.api.invokeURL + `/user`, { email: user?.email, username: user?.username, car: mc })
+            .catch(err => {
+                setOpenErrorSnackbar(true);
+                setErrorMessage(err)
+            })
+            if (resp) {
+                dispatch(updateMyCar(mc));
+                setOpenSuccessSnackbar(true);
+            }
+
         }
     };
 
@@ -177,19 +192,19 @@ const MyCar: React.FC<{}> = () => {
                     <FormControl component="fieldset" className={globalClasses.checkboxContainer}>
                         <FormGroup>
                             <FormControlLabel
-                                control={<Checkbox checked={fuel} onChange={handleChange} color="default" size="small" name="fuel" />}
+                                control={<Checkbox checked={fuel} onChange={handleChangeFilters} color="default" size="small" name="fuel" />}
                                 label="Fuel"
                             />
                             <FormControlLabel
-                                control={<Checkbox checked={service} onChange={handleChange} color="default" size="small" name="service" />}
+                                control={<Checkbox checked={service} onChange={handleChangeFilters} color="default" size="small" name="service" />}
                                 label="Service"
                             />
                             <FormControlLabel
-                                control={<Checkbox checked={maintenance} onChange={handleChange} color="default" size="small" name="maintenance" />}
+                                control={<Checkbox checked={maintenance} onChange={handleChangeFilters} color="default" size="small" name="maintenance" />}
                                 label="Maintenance"
                             />
                             <FormControlLabel
-                                control={<Checkbox checked={tax} onChange={handleChange} color="default" size="small" name="tax" />}
+                                control={<Checkbox checked={tax} onChange={handleChangeFilters} color="default" size="small" name="tax" />}
                                 label="Road Tax"
                             />
                         </FormGroup>
@@ -409,19 +424,8 @@ const MyCar: React.FC<{}> = () => {
                     </ResponsiveContainer>
                 </Grid>
             }
-            <Snackbar
-
-                autoHideDuration={2500}
-                anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
-                open={openSuccessSnackbar}
-                onClose={() => setOpenSuccessSnackbar(false)}
-                key={uuidv4()}
-
-            >
-                <Alert onClose={() => setOpenSuccessSnackbar(false)} severity="success">
-                    Success!
-                </Alert>
-            </Snackbar>
+            {snackbar(2500, setOpenSuccessSnackbar, openSuccessSnackbar, `Success`, 'success')}
+            {snackbar(5000, setOpenErrorSnackbar, openErrorSnackbar, `ERROR: ${errorMessage}`, 'error')}
         </div>
     );
 

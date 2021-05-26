@@ -54,7 +54,7 @@ const Cars: React.FC<{}> = () => {
         setOrderBy(property);
     };
 
-    const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const handleChangeFilters = (event: React.ChangeEvent<HTMLInputElement>) => {
         dispatch(updateFilters({ ...filters, [event.target.name]: event.target.checked }));
     };
 
@@ -209,19 +209,19 @@ const Cars: React.FC<{}> = () => {
                     <FormControl component="fieldset" className={globalClasses.checkboxContainer}>
                         <FormGroup>
                             <FormControlLabel
-                                control={<Checkbox checked={fuel} onChange={handleChange} color="default" size="small" name="fuel" />}
+                                control={<Checkbox checked={fuel} onChange={handleChangeFilters} color="default" size="small" name="fuel" />}
                                 label="Fuel"
                             />
                             <FormControlLabel
-                                control={<Checkbox checked={service} onChange={handleChange} color="default" size="small" name="service" />}
+                                control={<Checkbox checked={service} onChange={handleChangeFilters} color="default" size="small" name="service" />}
                                 label="Service"
                             />
                             <FormControlLabel
-                                control={<Checkbox checked={maintenance} onChange={handleChange} color="default" size="small" name="maintenance" />}
+                                control={<Checkbox checked={maintenance} onChange={handleChangeFilters} color="default" size="small" name="maintenance" />}
                                 label="Maintenance"
                             />
                             <FormControlLabel
-                                control={<Checkbox checked={tax} onChange={handleChange} color="default" size="small" name="tax" />}
+                                control={<Checkbox checked={tax} onChange={handleChangeFilters} color="default" size="small" name="tax" />}
                                 label="Road Tax"
                             />
                         </FormGroup>

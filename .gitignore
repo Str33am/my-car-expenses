@@ -44,6 +44,7 @@ typings/
 **/node_modules/
 **/dist/
 **/.vscode/
+**/build/
 .DS_Store
 
 # Optional eslint cache
