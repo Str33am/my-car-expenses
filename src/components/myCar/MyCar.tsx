@@ -1,11 +1,11 @@
 import { Accordion, AccordionDetails, AccordionSummary, Button, Checkbox, createStyles, FormControl, FormControlLabel, FormGroup, Grid, InputAdornment, InputLabel, makeStyles, OutlinedInput, Typography } from '@material-ui/core';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import ExpandMoreIcon from '@material-ui/icons/ExpandMore';
 import MainContainer from '../shared/MainContainer';
 import { Car, CarChartData, CarData, FUELTYPE, IRootState, Months, OptionType } from '../../types';
 import { useDispatch, useSelector } from 'react-redux';
 import useStyles from '../../styles/styles';
-import { updateMyCar, updateMyFilters } from '../../store/actions/actions';
+import { updateMyCar, updateMyFilters, updateUserStore } from '../../store/actions/actions';
 import clsx from 'clsx';
 import _ from 'lodash';
 import Select from 'react-select';
@@ -15,6 +15,8 @@ import { Bar, BarChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip, XAx
 import { snackbar } from '../shared/helpers';
 import config from '../../config.json';
 import carsData from '../../cars.json';
+import { Auth } from 'aws-amplify';
+
 
 const MyCar: React.FC<{}> = () => {
     const globalClasses = useStyles();
@@ -31,11 +33,11 @@ const MyCar: React.FC<{}> = () => {
     const [openErrorSnackbar, setOpenErrorSnackbar] = useState<boolean>(false);
     const [errorMessage, setErrorMessage ] = useState<string>('');
 
-    const [make, setMake] = useState<string>('');
-    const [model, setModel] = useState<string>('');
-    const [carYear, setCarYear] = useState<number>(0);
+    const [make, setMake] = useState<string>(myCar?.car?.make ?? '');
+    const [model, setModel] = useState<string>(myCar?.car?.model ?? '');
+    const [carYear, setCarYear] = useState<number>(myCar?.car?.year ?? 0);
+    const [fuelType, setFuelType] = useState<FUELTYPE>(myCar?.fuelType ?? FUELTYPE.DIESEL);
     const [mileage, setMileage] = useState<number | undefined>(myCar?.mileage);
-    const [fuelType, setFuelType] = useState<FUELTYPE>();
     const [mileageTolerance, setMileageTolerance] = useState<number | undefined>(myCar?.mileageTolerance);
     const [milesTolerance, setMilesTolerance] = useState<number | undefined>(myCar?.milesTolerance);
     const [yearTolerance, setYearTolerance] = useState<number | undefined>(myCar?.yearTolerance);
@@ -44,19 +46,67 @@ const MyCar: React.FC<{}> = () => {
 
     const selectFilter = (state: IRootState) => state.app.appState.myFilters;
     const filters = useSelector(selectFilter);
-
-    const myMake = myCar?.car?.make ? myCar.car.make : make;
-    const myModel = myCar?.car?.model ? myCar.car.model : model;
-    const myYear = myCar?.car?.year ? myCar.car.year : carYear;
-    const myFuelType = myCar?.fuelType ?? fuelType;
-
     const { fuel, maintenance, service, tax } = filters;
+
+    const fetchUser = async () => {
+        const userInfo = await Auth.currentUserInfo();
+        const {email} = userInfo.attributes;
+        
+        const responseUser = await axios.get(config.api.invokeURL + `/user/${email}`)
+        .catch(err => {
+            setErrorMessage(err)
+        });
+        
+        if (responseUser && responseUser.data && responseUser.data.car) {
+
+            const car: CarData = {...responseUser.data.car}
+            if (car?.expenses){
+                if (car?.expenses?.fuelExpenses) {
+                    car.expenses.fuelExpenses.forEach((_, i) => {
+                        car.expenses.fuelExpenses[i].date = new Date(car.expenses.fuelExpenses[i].date)
+                    })
+                }
+                if (car?.expenses?.maintenanceExpenses) {
+                    car.expenses.maintenanceExpenses.forEach((_, i) => {
+                        car.expenses.maintenanceExpenses[i].date = new Date(car.expenses.maintenanceExpenses[i].date)
+                    })
+                }
+                if (car?.expenses?.roadTaxExpenses) {
+                    car.expenses.roadTaxExpenses.forEach((_, i) => {
+                        car.expenses.roadTaxExpenses[i].date = new Date(car.expenses.roadTaxExpenses[i].date)
+                    })
+                }
+                if (car?.expenses?.serviceExpenses) {
+                    car.expenses.serviceExpenses.forEach((_, i) => {
+                        car.expenses.serviceExpenses[i].date = new Date(car.expenses.serviceExpenses[i].date)
+                    })
+                }
+            }
+            dispatch(updateMyCar(car));
+            dispatch(updateUserStore({email: responseUser.data.email, username: responseUser.data.username}));
+            setMake(car?.car?.make ?? '');
+            setModel(car?.car?.model ?? '');
+            setCarYear(car?.car?.year ?? 0);
+            setFuelType(car?.fuelType);
+
+            setMileage(car?.mileage);
+            setMileageTolerance(car?.mileageTolerance);
+            setMilesTolerance(car?.milesTolerance);
+            setYearTolerance(car?.yearTolerance);
+        }
+        
+    };
+    
+    useEffect(() => {
+        fetchUser();
+    //eslint-disable-next-line
+    }, [])
 
     const makes: OptionType[] = _.uniqBy(carsData, "make").map((c: Car) => ({ value: c.make, label: c.make }));
 
-    const years: OptionType[] = _.uniqBy(carsData.filter(cd => cd.make === myMake), "year").map((c: any) => ({ value: c.year, label: c.year })).reverse();
+    const years: OptionType[] = _.uniqBy(carsData.filter(cd => cd.make === make), "year").map((c: any) => ({ value: c.year, label: c.year })).reverse();
 
-    const models: OptionType[] = carsData.filter(cd => cd.make === myMake && cd.year === myYear).map(c => ({ value: c.model, label: c.model }));
+    const models: OptionType[] = carsData.filter(cd => cd.make === make && cd.year === carYear).map(c => ({ value: c.model, label: c.model }));
 
     const fuelTypes: OptionType[] = [
         { value: FUELTYPE.DIESEL, label: FUELTYPE.DIESEL },
@@ -102,14 +152,14 @@ const MyCar: React.FC<{}> = () => {
         if (myCar) setFuelType(data.value);
     };
 
-    const selectedYear = years.find(y => y.value === myYear);
-    const selectedMake = makes.find(m => m.value === myMake);
+    const selectedYear = years.find(y => y.value === carYear);
+    const selectedMake = makes.find(m => m.value === make);
 
-    const selectedModel = models.find(m => m.value === myModel);
+    const selectedModel = models.find(m => m.value === model);
 
-    const selectedFuelTypes = fuelTypes.find(m => m.value === myFuelType);
+    const selectedFuelTypes = fuelTypes.find(m => m.value === fuelType);
 
-    const isValid = myMake !== "" && myModel !== "" && myYear !== 0 && myFuelType !== undefined
+    const isValid = make !== "" && model !== "" && carYear !== 0 && fuelType !== undefined
 
     const handleSave = async () => {
         if (isValid && user?.email) {
@@ -119,11 +169,11 @@ const MyCar: React.FC<{}> = () => {
                 mc = {
                     id: uuidv4(),
                     car: {
-                        make: myMake,
-                        model: myModel,
-                        year: myYear
+                        make: make,
+                        model: model,
+                        year: carYear
                     },
-                    fuelType: myFuelType ?? FUELTYPE.DIESEL,
+                    fuelType: fuelType ?? FUELTYPE.DIESEL,
                     mileage: mileage ? mileage : myCar?.mileage ?? 0,
                     mileageTolerance: mileageTolerance ?? 0,
                     yearTolerance: yearTolerance ?? 0,
@@ -139,11 +189,11 @@ const MyCar: React.FC<{}> = () => {
 
             } else {
                 mc = { ...myCar };
-                mc.car.make = myMake;
-                mc.car.model = myModel;
-                mc.car.year = myYear;
+                mc.car.make = make;
+                mc.car.model = model;
+                mc.car.year = carYear;
                 mc.mileage = mileage ? mileage : myCar?.mileage ?? 0;
-                mc.fuelType = myFuelType ?? FUELTYPE.DIESEL;
+                mc.fuelType = fuelType ?? FUELTYPE.DIESEL;
                 mc.mileageTolerance = mileageTolerance ?? 0;
                 mc.yearTolerance = yearTolerance ?? 0;
                 mc.milesTolerance = milesTolerance ?? 0;
@@ -278,7 +328,7 @@ const MyCar: React.FC<{}> = () => {
                         <Grid item xs={2}>
                             <Typography >Year</Typography>
                             <Select
-                                isDisabled={myMake === ""}
+                                isDisabled={make === ""}
                                 options={years}
                                 defaultValue={selectedYear}
                                 value={selectedYear}
@@ -293,11 +343,12 @@ const MyCar: React.FC<{}> = () => {
                             <FormControl className={clsx(globalClasses.margin, localClasses.textFieldContainer)} variant="outlined" >
                                 <InputLabel htmlFor="outlined-adornment-mileage">Mileage</InputLabel>
                                 <OutlinedInput
-                                    id="outlined-adornment-Mileage"
+                                    id="outlined-adornment-mileage"
                                     type={'number'}
                                     value={mileage}
                                     required
-                                    endAdornment={<InputAdornment position="end">{mileage && mileage > 0 ? ' miles' : ''}</InputAdornment>}
+                                    startAdornment={<InputAdornment position="start"></InputAdornment>}
+                                    endAdornment={<InputAdornment position="end">{mileage && mileage > 0 ? ' miles': ''}</InputAdornment>}
                                     onChange={handleMileageChange()}
                                     labelWidth={70}
                                 />
@@ -328,7 +379,7 @@ const MyCar: React.FC<{}> = () => {
                         <Grid item xs={2}>
                             <Typography >Model</Typography>
                             <Select
-                                isDisabled={myMake === "" || myYear === 0}
+                                isDisabled={make === "" || carYear === 0}
                                 options={models}
                                 defaultValue={selectedModel}
                                 value={selectedModel}
@@ -342,7 +393,7 @@ const MyCar: React.FC<{}> = () => {
                         <Grid item xs={2}>
                             <Typography >Fuel</Typography>
                             <Select
-                                isDisabled={myMake === "" || myYear === 0 || myModel === ""}
+                                isDisabled={make === "" || carYear === 0 || model === ""}
                                 options={fuelTypes}
                                 defaultValue={selectedFuelTypes}
                                 value={selectedFuelTypes}

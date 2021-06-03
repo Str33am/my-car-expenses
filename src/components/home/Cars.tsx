@@ -42,8 +42,8 @@ const Cars: React.FC<{}> = () => {
 
     const { fuel, maintenance, service, tax } = filters;
 
-    const from = fromYear && fromMonth ? new Date(fromYear, Months.indexOf(fromMonth)) : new Date();
-    const to = toYear && toMonth ? new Date(toYear, Months.indexOf(toMonth)) : new Date();
+    const from = fromYear && fromMonth ? new Date(fromYear, Months.indexOf(fromMonth), new Date().getDate()) : new Date();
+    const to = toYear && toMonth ? new Date(toYear, Months.indexOf(toMonth), new Date().getDate(), 23, 59, 59) : new Date();
     const period: number = monthDiff(fromYear, toYear, fromMonth, toMonth);
 
     const sortedList = myCar && carsToCompareState ? orderArrayBy([myCar, ...carsToCompareState], order, orderBy, filters, period) : [];
@@ -407,6 +407,7 @@ const monthDiff = (fromYear: any, toYear: any, fromMonth: any, toMonth: any): nu
 };
 
 const getMiles = (car: CarData, from: Date, to: Date): string => {
+    
     const mileages: number[] = []
     car.expenses.fuelExpenses.filter(fe => fe.date > from && fe.date < to).forEach(f => mileages.push(f.mileage))
     car.expenses.roadTaxExpenses.filter(fe => fe.date > from && fe.date < to).forEach(f => mileages.push(f.mileage))

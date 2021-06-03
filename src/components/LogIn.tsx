@@ -10,7 +10,7 @@ import CloseIcon from '@material-ui/icons/Close';
 import Typography from '@material-ui/core/Typography';
 import { FormControl, InputAdornment, InputLabel, OutlinedInput, Button, Dialog } from '@material-ui/core';
 import { Visibility, VisibilityOff } from '@material-ui/icons';
-import { updateUserStore } from '../store/actions/actions';
+import { updateMyCar, updateUserStore } from '../store/actions/actions';
 import { useDispatch } from 'react-redux';
 import { Auth } from 'aws-amplify';
 import { snackbar } from './shared/helpers';
@@ -109,21 +109,22 @@ const LogIn:React.FC<LogInProps> = props => {
     const {username} = userInfo
     const {email} = userInfo.attributes;
     
-    await axios.get(config.api.invokeURL + `/user/${email}`)
-    .then(responseUser => {
-      if (responseUser?.data) {
-        dispatch(updateUserStore(responseUser.data));
-      }
-    })
+    const responseUser = await axios.get(config.api.invokeURL + `/user/${email}`)
     .catch(err => {
-      console.warn(err)
       dispatch(updateUserStore({email, username}));
       axios.put(config.api.invokeURL + `/user`, { email: email, username: username})
           .catch(err => {
               setErrorMessage(err)
               setOpenErrorSnackbar(true);
           })
-    })
+    });
+    
+    if (responseUser && responseUser.data) {
+      dispatch(updateUserStore(responseUser.data));
+      if (responseUser.data.car) {
+        dispatch(updateMyCar(responseUser.data.car));
+      }
+    }
     
 }
 
@@ -132,7 +133,7 @@ const LogIn:React.FC<LogInProps> = props => {
     try {
       await Auth.signIn( username, values.password);
       
-      fetchUser();
+      await fetchUser();
       setOpenSuccessSnackbar(true);
       setOpen(false);
     } catch (error) {

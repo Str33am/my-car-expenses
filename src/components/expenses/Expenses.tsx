@@ -1,6 +1,8 @@
 import { Accordion, AccordionDetails, AccordionSummary, Button, createStyles, FormControl, FormControlLabel, FormGroup, Grid, InputAdornment, InputLabel, makeStyles, OutlinedInput, Paper, Radio, RadioGroup, Table, TableBody, TableCell, TableContainer, TableRow } from '@material-ui/core';
 import React, { useState } from 'react';
 import useStyles from '../../styles/styles';
+import axios from 'axios';
+import config from '../../config.json';
 import ExpandMoreIcon from '@material-ui/icons/ExpandMore';
 import { CarData, FUELTYPE, IFuelExpense, IMaintenanceExpense, IRoadTaxExpense, IRootState, IServiceExpense, Order } from '../../types';
 import { useDispatch, useSelector } from 'react-redux';
@@ -14,8 +16,12 @@ import { v4 as uuidv4 } from 'uuid';
 
 const Expenses: React.FC<{}> = () => {
     const globalClasses = useStyles();
+
     const selectMyCar = (state: IRootState) => state.app.appState.myCar;
     const myCar = useSelector(selectMyCar);
+
+    const selectUser = (state: IRootState) => state.app.appState.user;
+    const user = useSelector(selectUser);
 
     const selectFilter = (state: IRootState) => state.app.appState.expensesFilter;
     const filter = useSelector(selectFilter);
@@ -25,14 +31,29 @@ const Expenses: React.FC<{}> = () => {
         dispatch(updateExpenseFilters((event.target as HTMLInputElement).value));
     };
 
+    const updateCarData = (car: CarData): void => {
+        axios.put(config.api.invokeURL + `/user`, { email: user?.email, username: user?.username, car})
+        .then(() => {
+            dispatch(updateMyCar(car));
+        })
+        .catch(err => {
+            console.log(err);
+            // setErrorMessage(err)
+            // setOpenErrorSnackbar(true);
+        })
+    }
+
     const onDelete = (id: string) => {
         if (myCar) {            
             if (filter === 'service') {
-                dispatch(updateMyCar({ ...myCar, expenses: { ...myCar.expenses, serviceExpenses: [...myCar.expenses.serviceExpenses].filter(f => f.id !== id) } }));
+                const updatedCar = { ...myCar, expenses: { ...myCar.expenses, serviceExpenses: [...myCar.expenses.serviceExpenses].filter(f => f.id !== id) } };
+                updateCarData(updatedCar);
             } else if (filter === 'maintenance') {
-                dispatch(updateMyCar({ ...myCar, expenses: { ...myCar.expenses, maintenanceExpenses: [...myCar.expenses.maintenanceExpenses].filter(f => f.id !== id) } }));
+                const updatedCar = { ...myCar, expenses: { ...myCar.expenses, maintenanceExpenses: [...myCar.expenses.maintenanceExpenses].filter(f => f.id !== id) } }
+                updateCarData(updatedCar);
             } else if (filter === 'roadTax') {
-                dispatch(updateMyCar({ ...myCar, expenses: { ...myCar.expenses, roadTaxExpenses: [...myCar.expenses.roadTaxExpenses].filter(f => f.id !== id) } }));
+                const updatedCar = { ...myCar, expenses: { ...myCar.expenses, roadTaxExpenses: [...myCar.expenses.roadTaxExpenses].filter(f => f.id !== id) } }
+                updateCarData(updatedCar);
             }
 
         }
@@ -50,7 +71,7 @@ const Expenses: React.FC<{}> = () => {
             if (filter === 'roadTax') {
                 myCarCopy.expenses.roadTaxExpenses.push(expense)
             }
-            dispatch(updateMyCar(myCarCopy));
+            updateCarData(myCarCopy);
         }
     };
 
@@ -80,7 +101,7 @@ const Expenses: React.FC<{}> = () => {
         </div>
     );
 
-    const renderMainPanel: JSX.Element = filter === 'fuel' ? <FuelExpensesPanel /> :
+    const renderMainPanel: JSX.Element = filter === 'fuel' ? <FuelExpensesPanel updateCarData={updateCarData}/> :
         <ServiceAndMaintenanceExpensesPanel
             onSave={onSave}
             onDelete={onDelete}
@@ -228,10 +249,15 @@ const ServiceAndMaintenanceExpensesPanel: React.FC<ServiceAndMaintenanceExpenses
     );
 };
 
-const FuelExpensesPanel: React.FC = () => {
+interface FuelExpensesPanelPros {
+    updateCarData: (car: CarData) => void;
+}
+
+const FuelExpensesPanel: React.FC<FuelExpensesPanelPros> = (props) => {
+
+    const {updateCarData} = props;
     const localClasses = useLocalStyles();
     const globalClasses = useStyles();
-    const dispatch = useDispatch();
 
     const selectMyCar = (state: IRootState) => state.app.appState.myCar;
     const myCar = useSelector(selectMyCar);
@@ -276,14 +302,13 @@ const FuelExpensesPanel: React.FC = () => {
                     mileage: mileage ?? 0,
                 }
             )
-
-            dispatch(updateMyCar(myCarCopy));
+            updateCarData(myCarCopy);
         }
     };
 
     const onDelete = (id: string) => {
         if (myCar) {
-            dispatch(updateMyCar({ ...myCar, expenses: { ...myCar.expenses, fuelExpenses: [...myCar.expenses.fuelExpenses].filter(f => f.id !== id) } }));
+            updateCarData({ ...myCar, expenses: { ...myCar.expenses, fuelExpenses: [...myCar.expenses.fuelExpenses].filter(f => f.id !== id) } });
         }
     }
 
