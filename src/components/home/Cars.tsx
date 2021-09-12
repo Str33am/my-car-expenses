@@ -418,24 +418,24 @@ const getMiles = (car: CarData, from: Date, to: Date): string => {
 
 const getFuelExpensesTotal = (car: CarData, from: Date, to: Date): number => {
     let fuelTotal = 0;
-    car.expenses.fuelExpenses.filter(fe => fe.date > from && fe.date < to).forEach(f => fuelTotal += f.costPerUnit * f.quantity)
+    car?.expenses?.fuelExpenses && car.expenses.fuelExpenses.filter(fe => fe.date > from && fe.date < to).forEach(f => fuelTotal += f.costPerUnit * f.quantity)
     return fuelTotal;
 };
 
 const getServiceExpensesTotal = (car: CarData, from: Date, to: Date): number => {
     let serviceTotal = 0;
-    car.expenses.serviceExpenses.filter(fe => fe.date > from && fe.date < to).forEach(s => serviceTotal += s.cost)
+    car?.expenses?.serviceExpenses.filter(fe => fe.date > from && fe.date < to).forEach(s => serviceTotal += s.cost)
     return serviceTotal;
 };
 
 const getMaintenanceExpensesTotal = (car: CarData, from: Date, to: Date): number => {
     let maintenanceTotal = 0;
-    car.expenses.maintenanceExpenses.filter(fe => fe.date > from && fe.date < to).forEach(s => maintenanceTotal += s.cost)
+    car?.expenses?.maintenanceExpenses.filter(fe => fe.date > from && fe.date < to).forEach(s => maintenanceTotal += s.cost)
     return maintenanceTotal;
 };
 
 const getRoadTaxExpensesTotal = (car: CarData, from: Date, to: Date): number => {
     let roadTaxTotal = 0;
-    car.expenses.roadTaxExpenses.filter(fe => fe.date > from && fe.date < to).forEach(s => roadTaxTotal += s.cost)
+    car?.expenses?.roadTaxExpenses.filter(fe => fe.date > from && fe.date < to).forEach(s => roadTaxTotal += s.cost)
     return roadTaxTotal;
 };

@@ -17,7 +17,6 @@ import config from '../../config.json';
 import carsData from '../../cars.json';
 import { Auth } from 'aws-amplify';
 
-
 const MyCar: React.FC<{}> = () => {
     const globalClasses = useStyles();
     const localClasses = useLocalStyles();
@@ -61,6 +60,7 @@ const MyCar: React.FC<{}> = () => {
 
             const car: CarData = {...responseUser.data.car}
             if (car?.expenses){
+                
                 if (car?.expenses?.fuelExpenses) {
                     car.expenses.fuelExpenses.forEach((_, i) => {
                         car.expenses.fuelExpenses[i].date = new Date(car.expenses.fuelExpenses[i].date)
@@ -216,7 +216,7 @@ const MyCar: React.FC<{}> = () => {
         const options: OptionType[] = []
         if (myCar?.expenses) {
             const years = [
-                ...myCar.expenses.fuelExpenses.map(f => f.date.getFullYear()),
+                ...myCar.expenses.fuelExpenses.map(f => new Date(f.date).getFullYear()),
                 ...myCar.expenses.maintenanceExpenses.map(m => m.date.getFullYear()),
                 ...myCar.expenses.roadTaxExpenses.map(r => r.date.getFullYear()),
                 ...myCar.expenses.serviceExpenses.map(s => s.date.getFullYear()),
