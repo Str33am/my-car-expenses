@@ -217,9 +217,9 @@ const MyCar: React.FC<{}> = () => {
         if (myCar?.expenses) {
             const years = [
                 ...myCar.expenses.fuelExpenses.map(f => new Date(f.date).getFullYear()),
-                ...myCar.expenses.maintenanceExpenses.map(m => m.date.getFullYear()),
-                ...myCar.expenses.roadTaxExpenses.map(r => r.date.getFullYear()),
-                ...myCar.expenses.serviceExpenses.map(s => s.date.getFullYear()),
+                ...myCar.expenses.maintenanceExpenses.map(m => new Date(m.date).getFullYear()),
+                ...myCar.expenses.roadTaxExpenses.map(r => new Date(r.date).getFullYear()),
+                ...myCar.expenses.serviceExpenses.map(s => new Date(s.date).getFullYear()),
             ]
             _.uniqBy(years).forEach((y: string) => options.push({ label: y, value: y }))
         }
@@ -279,10 +279,10 @@ const MyCar: React.FC<{}> = () => {
     const expensesData = (): CarChartData[] => {
         const cars: CarChartData[] = [];
         type ExpenseType = { date: Date, cost: number, month: string };
-        const monthlyFuelExpenses: ExpenseType[] = myCar?.expenses?.fuelExpenses.filter(ex => ex.date.getFullYear() === year).map(f => ({ date: f.date, cost: f.costPerUnit * f.quantity, month: Months[f.date.getMonth()] })) ?? [];
-        const monthlyServiceExpenses: ExpenseType[] = myCar?.expenses?.serviceExpenses.filter(ex => ex.date.getFullYear() === year).map(f => ({ date: f.date, cost: f.cost, month: Months[f.date.getMonth()] })) ?? [];
-        const monthlyMaintenanceExpenses: ExpenseType[] = myCar?.expenses?.maintenanceExpenses.filter(ex => ex.date.getFullYear() === year).map(f => ({ date: f.date, cost: f.cost, month: Months[f.date.getMonth()] })) ?? [];
-        const monthlyRoadTaxExpenses: ExpenseType[] = myCar?.expenses?.roadTaxExpenses.filter(ex => ex.date.getFullYear() === year).map(f => ({ date: f.date, cost: f.cost, month: Months[f.date.getMonth()] })) ?? [];
+        const monthlyFuelExpenses: ExpenseType[] = myCar?.expenses?.fuelExpenses.filter(ex => new Date(ex.date).getFullYear() === year).map(f => ({ date: f.date, cost: f.costPerUnit * f.quantity, month: Months[new Date(f.date).getMonth()] })) ?? [];
+        const monthlyServiceExpenses: ExpenseType[] = myCar?.expenses?.serviceExpenses.filter(ex => new Date(ex.date).getFullYear() === year).map(f => ({ date: f.date, cost: f.cost, month: Months[new Date(f.date).getMonth()] })) ?? [];
+        const monthlyMaintenanceExpenses: ExpenseType[] = myCar?.expenses?.maintenanceExpenses.filter(ex => new Date(ex.date).getFullYear() === year).map(f => ({ date: f.date, cost: f.cost, month: Months[new Date(f.date).getMonth()] })) ?? [];
+        const monthlyRoadTaxExpenses: ExpenseType[] = myCar?.expenses?.roadTaxExpenses.filter(ex => new Date(ex.date).getFullYear() === year).map(f => ({ date: f.date, cost: f.cost, month: Months[new Date(f.date).getMonth()] })) ?? [];
 
 
         Months.forEach(month => {
